@@ -10,15 +10,20 @@ let customers=load('customers',[]);
 let sales=load('sales',[]);
 let deliveries=load('deliveries',[]);
 let page='home';
+let logo=localStorage.getItem('storeLogo')||'';
 
-function rup(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n)}
-function toast(t){let x=$('.toast');x.textContent=t;x.style.display='block';setTimeout(()=>x.style.display='none',1800)}
-function login(){app.innerHTML=`<div class="login"><div class="card"><div class="brand"><div class="gold" style="font-size:14px;font-weight:800">DR ELEKTRONIK</div><b>TOKO TV JOGJA</b><p class="muted">Sistem Kasir & Manajemen Toko</p></div><div class="field"><label>Username</label><input id="u" value="admin"></div><div class="field"><label>Password</label><input id="p" type="password" value="1234"></div><button class="btn primary" style="width:100%" onclick="doLogin()">Masuk</button><p class="muted" style="text-align:center;font-size:12px">Demo: admin / 1234</p></div></div>`}
+function rup(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0)}
+function toast(t){let x=$('.toast');if(!x)return;x.textContent=t;x.style.display='block';setTimeout(()=>x.style.display='none',1800)}
+function login(){app.innerHTML=`<div class="login"><div class="card"><div class="brand">${logo?`<img class="loginlogo" src="${logo}" alt="Logo">`:''}<div class="gold" style="font-size:14px;font-weight:800">DR ELEKTRONIK</div><b>TOKO TV JOGJA</b><p class="muted">Sistem Kasir & Manajemen Toko</p></div><div class="field"><label>Username</label><input id="u" value="admin"></div><div class="field"><label>Password</label><input id="p" type="password" value="1234"></div><button class="btn primary" style="width:100%" onclick="doLogin()">Masuk</button><p class="muted" style="text-align:center;font-size:12px">Demo: admin / 1234</p></div></div>`}
 function doLogin(){if($('#u').value==='admin'&&$('#p').value==='1234'){sessionStorage.in=1;render()}else toast('Username/password salah')}
-function render(){if(!sessionStorage.in)return login(); app.innerHTML=`<div class="app"><header class="top"><div class="toprow"><div><h1>TOKO TV JOGJA</h1><small>DR Elektronik</small></div><button class="btn" style="background:#222;color:#fff" onclick="logout()">Keluar</button></div></header><main class="content" id="main"></main><nav class="nav">${nav('home','⌂','Beranda')}${nav('products','▣','Produk')}${nav('sales','＋','Jual')}${nav('customers','♙','Pelanggan')}${nav('report','▤','Laporan')}</nav><div class="toast"></div></div>`;show()}
+function render(){if(!sessionStorage.in)return login(); app.innerHTML=`<div class="app"><header class="top"><div class="toprow"><div class="brandhead"><div class="logoWrap">${logo?`<img class="toplogo" src="${logo}" alt="Logo">`:`<div class="logoPlaceholder">TV</div>`}</div><div><h1>TOKO TV JOGJA</h1><small>DR Elektronik</small></div></div><button class="btn" style="background:#222;color:#fff" onclick="logout()">Keluar</button></div></header><main class="content" id="main"></main><nav class="nav">${nav('home','⌂','Beranda')}${nav('products','▣','Produk')}${nav('sales','＋','Jual')}${nav('customers','♙','Pelanggan')}${nav('report','▤','Laporan')}</nav><div class="toast"></div></div>`;show()}
 function nav(p,i,t){return `<button class="${page===p?'active':''}" onclick="page='${p}';show()"><div style="font-size:22px">${i}</div>${t}</button>`}
 function show(){let m=$('#main');if(page==='home')home(m);if(page==='products')productPage(m);if(page==='sales')salesPage(m);if(page==='customers')customerPage(m);if(page==='report')reportPage(m)}
-function home(m){let omzet=sales.reduce((a,s)=>a+s.total,0),profit=sales.reduce((a,s)=>a+s.profit,0),stock=products.reduce((a,p)=>a+p.stock,0);m.innerHTML=`<h2>Dashboard</h2><div class="stats"><div class="stat">Omzet<b>${rup(omzet)}</b></div><div class="stat">Laba<b>${rup(profit)}</b></div><div class="stat">Produk<b>${products.length}</b></div><div class="stat">Stok<b>${stock}</b></div></div><div class="section"><div class="sectionhead"><h2>Transaksi terbaru</h2><button class="btn goldbtn" onclick="page='sales';show()">Penjualan</button></div><div class="list">${sales.slice(-5).reverse().map(s=>`<div class="item"><div><b>${s.no}</b><span class="muted">${s.customer||'Umum'} · ${s.product}</span></div><strong>${rup(s.total)}</strong></div>`).join('')||'<div class="empty">Belum ada transaksi</div>'}</div></div><div class="section"><h2>Stok menipis</h2><div class="list">${products.filter(p=>p.stock<=2).map(p=>`<div class="item"><div><b>${p.name}</b><span class="muted">${p.sku}</span></div><span class="tag">${p.stock} unit</span></div>`).join('')||'<div class="empty">Stok aman</div>'}</div></div>`}
+function home(m){let omzet=sales.reduce((a,s)=>a+s.total,0),profit=sales.reduce((a,s)=>a+s.profit,0),stock=products.reduce((a,p)=>a+p.stock,0);m.innerHTML=`<h2>Dashboard</h2><div class="stats"><div class="stat">Omzet<b>${rup(omzet)}</b></div><div class="stat">Laba<b>${rup(profit)}</b></div><div class="stat">Produk<b>${products.length}</b></div><div class="stat">Stok<b>${stock}</b></div></div><div class="section"><div class="sectionhead"><h2>Pengaturan</h2><button class="btn goldbtn" onclick="chooseLogo()">🖼️ Ganti Logo</button></div><div class="item"><div><b>Logo Toko</b><span class="muted">${logo?'Logo khusus sudah terpasang':'Belum ada logo khusus'}</span></div>${logo?`<button class="btn smallbtn danger" onclick="removeLogo()">Hapus Logo</button>`:''}</div></div><div class="section"><div class="sectionhead"><h2>Transaksi terbaru</h2><button class="btn goldbtn" onclick="page='sales';show()">Penjualan</button></div><div class="list">${sales.slice(-5).reverse().map(s=>`<div class="item"><div><b>${s.no}</b><span class="muted">${s.customer||'Umum'} · ${s.product}</span></div><strong>${rup(s.total)}</strong></div>`).join('')||'<div class="empty">Belum ada transaksi</div>'}</div></div><div class="section"><h2>Stok menipis</h2><div class="list">${products.filter(p=>p.stock<=2).map(p=>`<div class="item"><div><b>${p.name}</b><span class="muted">${p.sku}</span></div><span class="tag">${p.stock} unit</span></div>`).join('')||'<div class="empty">Stok aman</div>'}</div></div><input id="logoFile" type="file" accept="image/*" style="display:none" onchange="saveLogo(this)">`}
+function chooseLogo(){$('#logoFile')?.click()}
+function saveLogo(input){let f=input.files?.[0];if(!f)return;if(!f.type.startsWith('image/'))return toast('Pilih file gambar');if(f.size>2*1024*1024)return toast('Ukuran logo maksimal 2 MB');let r=new FileReader();r.onload=()=>{logo=r.result;localStorage.setItem('storeLogo',logo);toast('Logo berhasil diganti');render()};r.readAsDataURL(f)}
+function removeLogo(){if(!confirm('Hapus logo khusus?'))return;logo='';localStorage.removeItem('storeLogo');toast('Logo dihapus');render()}
+
 function productPage(m){
 m.innerHTML=`<div class="sectionhead"><div><h2>Daftar Produk</h2><span class="muted">${products.length} produk</span></div><button class="btn goldbtn" onclick="addProduct()">+ Produk</button></div>
 <div class="list">${products.map(p=>`<div class="item productitem">
@@ -27,59 +32,61 @@ m.innerHTML=`<div class="sectionhead"><div><h2>Daftar Produk</h2><span class="mu
 </div>`).join('')||'<div class="empty">Belum ada produk</div>'}</div>`}
 
 function productForm(title,p={}){
-const editing=!!p.id;
-const m=$('#main');
+const editing=!!p.id; const m=$('#main');
 m.innerHTML=`<div class="sectionhead"><h2>${title}</h2><button class="btn" onclick="show()">Batal</button></div>
-<div class="card formcard">
-<div class="field"><label>Nama produk</label><input id="pn" value="${p.name||''}" placeholder='Contoh: Coocaa 32"'></div>
+<div class="card formcard"><div class="field"><label>Nama produk</label><input id="pn" value="${p.name||''}" placeholder='Contoh: Coocaa 32"'></div>
 <div class="field"><label>SKU</label><input id="psku" value="${p.sku||''}" placeholder="SKU TV"></div>
 <div class="row"><div class="field"><label>Harga jual</label><input id="pprice" type="number" value="${p.price||''}" placeholder="1500000"></div><div class="field"><label>Harga modal</label><input id="pcost" type="number" value="${p.cost||''}" placeholder="1200000"></div></div>
 <div class="row"><div class="field"><label>Stok</label><input id="pstock" type="number" min="0" value="${p.stock??0}"></div><div class="field"><label>Serial number</label><input id="pserial" value="${p.serial||''}" placeholder="SN-001"></div></div>
-<button class="btn primary" style="width:100%" onclick="${editing?`updateProduct(${p.id})`:'saveNewProduct()'}">${editing?'Simpan Perubahan':'Simpan Produk'}</button>
-</div>`;
-}
+<button class="btn primary" style="width:100%" onclick="${editing?`updateProduct(${p.id})`:'saveNewProduct()'}">${editing?'Simpan Perubahan':'Simpan Produk'}</button></div>`}
+function addProduct(){productForm('Tambah Produk')}
+function saveNewProduct(){let name=$('#pn').value.trim(),sku=$('#psku').value.trim(),price=+$('#pprice').value,cost=+$('#pcost').value,stock=Math.max(0,+$('#pstock').value||0),serial=$('#pserial').value.trim();if(!name)return toast('Nama produk wajib diisi');if(!sku)sku='SKU'+Date.now().toString().slice(-5);if(price<=0)return toast('Harga jual harus diisi');if(cost<0)return toast('Harga modal tidak valid');products.push({id:Date.now(),name,sku,price,cost,stock,serial});save('products',products);toast('Produk ditambahkan');show()}
+function editProduct(id){let p=products.find(x=>x.id===id);if(p)productForm('Edit Produk',p)}
+function updateProduct(id){let p=products.find(x=>x.id===id);if(!p)return;let name=$('#pn').value.trim(),sku=$('#psku').value.trim(),price=+$('#pprice').value,cost=+$('#pcost').value,stock=Math.max(0,+$('#pstock').value||0),serial=$('#pserial').value.trim();if(!name)return toast('Nama produk wajib diisi');if(!sku)return toast('SKU wajib diisi');if(price<=0)return toast('Harga jual harus diisi');if(cost<0)return toast('Harga modal tidak valid');Object.assign(p,{name,sku,price,cost,stock,serial});save('products',products);toast('Perubahan produk disimpan');show()}
+function deleteProduct(id){let p=products.find(x=>x.id===id);if(!p)return;if(!confirm(`Hapus produk "${p.name}"?`))return;products=products.filter(x=>x.id!==id);save('products',products);toast('Produk dihapus');show()}
 
-function addProduct(){productForm('Tambah Produk');}
-
-function saveNewProduct(){
-let name=$('#pn').value.trim(), sku=$('#psku').value.trim(), price=+$('#pprice').value, cost=+$('#pcost').value, stock=Math.max(0,+$('#pstock').value||0), serial=$('#pserial').value.trim();
-if(!name)return toast('Nama produk wajib diisi');
-if(!sku)sku='SKU'+Date.now().toString().slice(-5);
-if(price<=0)return toast('Harga jual harus diisi');
-if(cost<0)return toast('Harga modal tidak valid');
-products.push({id:Date.now(),name,sku,price,cost,stock,serial});
-save('products',products);toast('Produk ditambahkan');show();
-}
-
-function editProduct(id){
-let p=products.find(x=>x.id===id);
-if(p)productForm('Edit Produk',p);
-}
-
-function updateProduct(id){
-let p=products.find(x=>x.id===id);
-if(!p)return;
-let name=$('#pn').value.trim(), sku=$('#psku').value.trim(), price=+$('#pprice').value, cost=+$('#pcost').value, stock=Math.max(0,+$('#pstock').value||0), serial=$('#pserial').value.trim();
-if(!name)return toast('Nama produk wajib diisi');
-if(!sku)return toast('SKU wajib diisi');
-if(price<=0)return toast('Harga jual harus diisi');
-if(cost<0)return toast('Harga modal tidak valid');
-Object.assign(p,{name,sku,price,cost,stock,serial});
-save('products',products);toast('Perubahan produk disimpan');show();
-}
-
-function deleteProduct(id){
-let p=products.find(x=>x.id===id);
-if(!p)return;
-if(!confirm(`Hapus produk "${p.name}"?`))return;
-products=products.filter(x=>x.id!==id);
-save('products',products);toast('Produk dihapus');show();
-}
 function salesPage(m){m.innerHTML=`<h2>Penjualan Baru</h2><div class="card" style="padding:18px"><div class="field"><label>Produk</label><select id="sp">${products.filter(p=>p.stock>0).map(p=>`<option value="${p.id}">${p.name} — ${rup(p.price)} (stok ${p.stock})</option>`).join('')}</select></div><div class="field"><label>Pelanggan</label><select id="sc"><option value="">Umum</option>${customers.map(c=>`<option>${c.name}</option>`).join('')}</select></div><div class="row"><div class="field"><label>Diskon</label><input id="disc" type="number" value="0"></div><div class="field"><label>Ongkir</label><input id="ship" type="number" value="0"></div></div><div class="row"><div class="field"><label>Pemasangan</label><input id="install" type="number" value="0"></div><div class="field"><label>Bonus</label><select id="bonus"><option>Bracket</option><option>Antena</option><option>Tanpa bonus</option></select></div></div><div class="field"><label>Pembayaran</label><select id="pay"><option>Cash</option><option>Transfer</option><option>QRIS</option></select></div><div class="section"><div class="total" id="stotal">Total</div></div><button class="btn primary" style="width:100%" onclick="sell()">Simpan Transaksi</button></div>`;['sp','disc','ship','install'].forEach(x=>$('#'+x)?.addEventListener('input',calc));calc()}
 function calc(){let p=products.find(x=>x.id==$('#sp')?.value);if(!p)return;let total=p.price-(+$('#disc').value||0)+(+$('#ship').value||0)+(+$('#install').value||0);$('#stotal').textContent=rup(total)}
-function sell(){let p=products.find(x=>x.id==$('#sp').value);if(!p||p.stock<1)return toast('Stok habis');let discount=+$('#disc').value||0,ship=+$('#ship').value||0,install=+$('#install').value||0,total=p.price-discount+ship+install;let no='TVJ-'+new Date().getFullYear()+'-'+String(sales.length+1).padStart(4,'0');let s={no,product:p.name,customer:$('#sc').value,total,profit:total-p.cost,bonus:$('#bonus').value,payment:$('#pay').value,date:new Date().toISOString(),serial:p.serial};sales.push(s);p.stock--;save('sales',sales);save('products',products);deliveries.push({no,customer:s.customer||'Umum',product:p.name,status:'Belum Dikirim'});save('deliveries',deliveries);alert(`Transaksi ${no}\n${p.name}\nTotal: ${rup(total)}\nSN: ${p.serial}`);toast('Transaksi tersimpan');page='home';render()}
-function customerPage(m){m.innerHTML=`<div class="sectionhead"><h2>Pelanggan</h2><button class="btn goldbtn" onclick="addCustomer()">+ Pelanggan</button></div><div class="list">${customers.map(c=>`<div class="item"><div><b>${c.name}</b><span class="muted">${c.phone||'-'}</span></div><span>${sales.filter(s=>s.customer===c.name).length} transaksi</span></div>`).join('')||'<div class="empty">Belum ada pelanggan</div>'}</div><div class="section"><h2>Antar & Pasang</h2><div class="list">${deliveries.map(d=>`<div class="item"><div><b>${d.no}</b><span class="muted">${d.customer} · ${d.product}</span></div><span class="tag">${d.status}</span></div>`).join('')||'<div class="empty">Belum ada pengiriman</div>'}</div>`}
-function addCustomer(){let name=prompt('Nama pelanggan');if(!name)return;let phone=prompt('No. WhatsApp');customers.push({name,phone});save('customers',customers);toast('Pelanggan ditambahkan');show()}
-function reportPage(m){let omzet=sales.reduce((a,s)=>a+s.total,0),profit=sales.reduce((a,s)=>a+s.profit,0);m.innerHTML=`<h2>Laporan</h2><div class="stats"><div class="stat">Omzet<b>${rup(omzet)}</b></div><div class="stat">Laba<b>${rup(profit)}</b></div><div class="stat">Transaksi<b>${sales.length}</b></div><div class="stat">TV terjual<b>${sales.length}</b></div></div><div class="section"><h2>Semua transaksi</h2><div class="list">${sales.slice().reverse().map(s=>`<div class="item"><div><b>${s.no}</b><span class="muted">${s.product} · ${s.customer||'Umum'} · ${s.payment}</span></div><strong>${rup(s.total)}</strong></div>`).join('')||'<div class="empty">Belum ada transaksi</div>'}</div></div>`}
+function sell(){let p=products.find(x=>x.id==$('#sp').value);if(!p||p.stock<1)return toast('Stok habis');let discount=+$('#disc').value||0,ship=+$('#ship').value||0,install=+$('#install').value||0,total=p.price-discount+ship+install;let no='TVJ-'+new Date().getFullYear()+'-'+String(sales.length+1).padStart(4,'0');let s={no,product:p.name,productId:p.id,customer:$('#sc').value,total,profit:total-p.cost,bonus:$('#bonus').value,payment:$('#pay').value,date:new Date().toISOString(),serial:p.serial,discount,ship,install};sales.push(s);p.stock--;save('sales',sales);save('products',products);deliveries.push({no,customer:s.customer||'Umum',product:p.name,status:'Belum Dikirim'});save('deliveries',deliveries);alert(`Transaksi ${no}\n${p.name}\nTotal: ${rup(total)}\nSN: ${p.serial}`);toast('Transaksi tersimpan');page='home';render()}
+
+function customerPage(m){m.innerHTML=`<div class="sectionhead"><h2>Pelanggan</h2><button class="btn goldbtn" onclick="addCustomer()">+ Pelanggan</button></div><div class="list">${customers.map(c=>`<div class="item"><div><b>${c.name}</b><span class="muted">${c.phone||'-'}</span></div><div class="productactions"><span>${sales.filter(s=>s.customer===c.name).length} transaksi</span><button class="btn smallbtn" onclick="editCustomer(${c.id})">Edit</button><button class="btn smallbtn danger" onclick="deleteCustomer(${c.id})">Hapus</button></div></div>`).join('')||'<div class="empty">Belum ada pelanggan</div>'}</div><div class="section"><h2>Antar & Pasang</h2><div class="list">${deliveries.map(d=>`<div class="item"><div><b>${d.no}</b><span class="muted">${d.customer} · ${d.product}</span></div><span class="tag">${d.status}</span></div>`).join('')||'<div class="empty">Belum ada pengiriman</div>'}</div>`}
+function customerForm(title,c={}){let editing=!!c.id;$('#main').innerHTML=`<div class="sectionhead"><h2>${title}</h2><button class="btn" onclick="page='customers';show()">Batal</button></div><div class="card formcard"><div class="field"><label>Nama pelanggan</label><input id="cn" value="${c.name||''}" placeholder="Nama lengkap"></div><div class="field"><label>No. WhatsApp</label><input id="cphone" value="${c.phone||''}" placeholder="08xxxxxxxxxx"></div><button class="btn primary" style="width:100%" onclick="${editing?`updateCustomer(${c.id})`:'saveNewCustomer()'}">${editing?'Simpan Perubahan':'Simpan Pelanggan'}</button></div>`}
+function addCustomer(){customerForm('Tambah Pelanggan')}
+function saveNewCustomer(){let name=$('#cn').value.trim(),phone=$('#cphone').value.trim();if(!name)return toast('Nama pelanggan wajib diisi');customers.push({id:Date.now(),name,phone});save('customers',customers);toast('Pelanggan ditambahkan');page='customers';show()}
+function editCustomer(id){let c=customers.find(x=>x.id===id);if(c)customerForm('Edit Pelanggan',c)}
+function updateCustomer(id){let c=customers.find(x=>x.id===id);if(!c)return;let old=c.name,name=$('#cn').value.trim(),phone=$('#cphone').value.trim();if(!name)return toast('Nama pelanggan wajib diisi');Object.assign(c,{name,phone});sales.forEach(s=>{if(s.customer===old)s.customer=name});deliveries.forEach(d=>{if(d.customer===old)d.customer=name});save('customers',customers);save('sales',sales);save('deliveries',deliveries);toast('Data pelanggan diperbarui');page='customers';show()}
+function deleteCustomer(id){let c=customers.find(x=>x.id===id);if(!c)return;if(sales.some(s=>s.customer===c.name)){if(!confirm('Pelanggan ini memiliki transaksi. Hapus data pelanggan saja? Riwayat transaksi tetap disimpan.'))return}else if(!confirm(`Hapus pelanggan "${c.name}"?`))return;customers=customers.filter(x=>x.id!==id);save('customers',customers);toast('Pelanggan dihapus');show()}
+
+function monthKey(v){let d=new Date(v);if(Number.isNaN(d.getTime()))return '';return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
+function monthLabel(key){if(!key)return 'Semua Bulan';let [y,mo]=key.split('-');return new Date(+y,+mo-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'})}
+function reportPage(m){
+ let keys=[...new Set(sales.map(s=>monthKey(s.date)).filter(Boolean))].sort().reverse();
+ let selected=window.reportMonth||keys[0]||monthKey(new Date());
+ if(!keys.includes(selected) && keys.length)selected=keys[0];
+ window.reportMonth=selected;
+ let monthly=sales.filter(s=>monthKey(s.date)===selected);
+ let omzet=monthly.reduce((a,s)=>a+(Number(s.total)||0),0),profit=monthly.reduce((a,s)=>a+(Number(s.profit)||0),0);
+ let recap=keys.map(k=>{
+   let rows=sales.filter(s=>monthKey(s.date)===k);
+   return {k,rows,omzet:rows.reduce((a,s)=>a+(Number(s.total)||0),0),profit:rows.reduce((a,s)=>a+(Number(s.profit)||0),0),tv:rows.length};
+ });
+ let allOmzet=sales.reduce((a,s)=>a+(Number(s.total)||0),0),allProfit=sales.reduce((a,s)=>a+(Number(s.profit)||0),0);
+ m.innerHTML=`<h2>Laporan Bulanan</h2>
+ <div class="card formcard" style="margin-bottom:18px"><div class="field"><label>Pilih Bulan</label><select id="reportMonthSelect">${keys.map(k=>`<option value="${k}" ${k===selected?'selected':''}>${monthLabel(k)}</option>`).join('')||`<option value="${selected}">${monthLabel(selected)}</option>`}</select></div></div>
+ <div class="stats"><div class="stat">Omzet<b>${rup(omzet)}</b></div><div class="stat">Laba<b>${rup(profit)}</b></div><div class="stat">Transaksi<b>${monthly.length}</b></div><div class="stat">TV terjual<b>${monthly.length}</b></div></div>
+ <div class="section"><div class="sectionhead"><h2>${monthLabel(selected)}</h2><span class="muted">${monthly.length} transaksi</span></div>
+ <div class="list">${monthly.slice().reverse().map(s=>`<div class="item"><div><b>${s.no}</b><span class="muted">${s.product} · ${s.customer||'Umum'} · ${s.payment}</span><span class="muted">${new Date(s.date).toLocaleString('id-ID')}</span></div><div class="productright"><strong>${rup(s.total)}</strong><div class="productactions"><button class="btn smallbtn" onclick="editSale('${s.no}')">Edit</button><button class="btn smallbtn danger" onclick="deleteSale('${s.no}')">Hapus</button></div></div></div>`).join('')||'<div class="empty">Belum ada transaksi pada bulan ini</div>'}</div></div>
+ <div class="section"><div class="sectionhead"><h2>Rekap Semua Bulan</h2><span class="muted">${keys.length} bulan</span></div>
+ <div class="monthlyTable"><div class="monthlyHead"><span>Bulan</span><span>Omzet</span><span>Laba</span><span>Trx</span><span>TV</span></div>
+ ${recap.map(r=>`<button class="monthlyRow ${r.k===selected?'selected':''}" onclick="window.reportMonth='${r.k}';show()"><span>${monthLabel(r.k)}</span><strong>${rup(r.omzet)}</strong><strong>${rup(r.profit)}</strong><span>${r.rows.length}</span><span>${r.tv}</span></button>`).join('')||'<div class="empty">Belum ada data laporan</div>'}
+ ${sales.length?`<div class="monthlyTotal"><span>Total</span><strong>${rup(allOmzet)}</strong><strong>${rup(allProfit)}</strong><span>${sales.length}</span><span>${sales.length}</span></div>`:''}</div></div>`;
+ $('#reportMonthSelect')?.addEventListener('change',e=>{window.reportMonth=e.target.value;show()});
+}
+function reportForm(s){let opts=customers.map(c=>`<option ${s.customer===c.name?'selected':''}>${c.name}</option>`).join('');$('#main').innerHTML=`<div class="sectionhead"><h2>Edit Laporan</h2><button class="btn" onclick="page='report';show()">Batal</button></div><div class="card formcard"><div class="field"><label>No. Transaksi</label><input value="${s.no}" disabled></div><div class="field"><label>Produk</label><input value="${s.product}" disabled></div><div class="field"><label>Pelanggan</label><select id="rc"><option value="">Umum</option>${opts}</select></div><div class="field"><label>Total transaksi</label><input id="rtotal" type="number" min="0" value="${s.total}"></div><div class="field"><label>Pembayaran</label><select id="rpay"><option ${s.payment==='Cash'?'selected':''}>Cash</option><option ${s.payment==='Transfer'?'selected':''}>Transfer</option><option ${s.payment==='QRIS'?'selected':''}>QRIS</option></select></div><div class="field"><label>Bonus</label><select id="rbonus"><option ${s.bonus==='Bracket'?'selected':''}>Bracket</option><option ${s.bonus==='Antena'?'selected':''}>Antena</option><option ${s.bonus==='Tanpa bonus'?'selected':''}>Tanpa bonus</option></select></div><div class="field"><label>Tanggal</label><input id="rdate" type="datetime-local" value="${toLocalInput(s.date)}"></div><button class="btn primary" style="width:100%" onclick="updateSale('${s.no}')">Simpan Perubahan</button></div>`}
+function toLocalInput(v){let d=new Date(v);if(Number.isNaN(d.getTime()))d=new Date();let p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`}
+function editSale(no){let s=sales.find(x=>x.no===no);if(s)reportForm(s)}
+function updateSale(no){let s=sales.find(x=>x.no===no);if(!s)return;let total=+$('#rtotal').value;if(total<0)return toast('Total tidak valid');s.customer=$('#rc').value;s.total=total;s.payment=$('#rpay').value;s.bonus=$('#rbonus').value;s.date=new Date($('#rdate').value||Date.now()).toISOString();let p=products.find(x=>x.name===s.product||x.id===s.productId);if(p)s.profit=total-p.cost;deliveries.forEach(d=>{if(d.no===s.no){d.customer=s.customer||'Umum';d.product=s.product}});save('sales',sales);save('deliveries',deliveries);toast('Laporan diperbarui');page='report';show()}
+function deleteSale(no){let s=sales.find(x=>x.no===no);if(!s)return;if(!confirm(`Hapus transaksi ${no}?`))return;let p=products.find(x=>x.id===s.productId||x.name===s.product);if(p)p.stock++;sales=sales.filter(x=>x.no!==no);deliveries=deliveries.filter(d=>d.no!==no);save('sales',sales);save('products',products);save('deliveries',deliveries);toast('Transaksi dihapus dan stok dikembalikan');show()}
+
 function logout(){sessionStorage.clear();render()}render();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
