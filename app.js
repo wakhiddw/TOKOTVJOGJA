@@ -19,8 +19,62 @@ function render(){if(!sessionStorage.in)return login(); app.innerHTML=`<div clas
 function nav(p,i,t){return `<button class="${page===p?'active':''}" onclick="page='${p}';show()"><div style="font-size:22px">${i}</div>${t}</button>`}
 function show(){let m=$('#main');if(page==='home')home(m);if(page==='products')productPage(m);if(page==='sales')salesPage(m);if(page==='customers')customerPage(m);if(page==='report')reportPage(m)}
 function home(m){let omzet=sales.reduce((a,s)=>a+s.total,0),profit=sales.reduce((a,s)=>a+s.profit,0),stock=products.reduce((a,p)=>a+p.stock,0);m.innerHTML=`<h2>Dashboard</h2><div class="stats"><div class="stat">Omzet<b>${rup(omzet)}</b></div><div class="stat">Laba<b>${rup(profit)}</b></div><div class="stat">Produk<b>${products.length}</b></div><div class="stat">Stok<b>${stock}</b></div></div><div class="section"><div class="sectionhead"><h2>Transaksi terbaru</h2><button class="btn goldbtn" onclick="page='sales';show()">Penjualan</button></div><div class="list">${sales.slice(-5).reverse().map(s=>`<div class="item"><div><b>${s.no}</b><span class="muted">${s.customer||'Umum'} · ${s.product}</span></div><strong>${rup(s.total)}</strong></div>`).join('')||'<div class="empty">Belum ada transaksi</div>'}</div></div><div class="section"><h2>Stok menipis</h2><div class="list">${products.filter(p=>p.stock<=2).map(p=>`<div class="item"><div><b>${p.name}</b><span class="muted">${p.sku}</span></div><span class="tag">${p.stock} unit</span></div>`).join('')||'<div class="empty">Stok aman</div>'}</div></div>`}
-function productPage(m){m.innerHTML=`<div class="sectionhead"><h2>Produk & Stok</h2><button class="btn goldbtn" onclick="addProduct()">+ Produk</button></div><div class="list">${products.map(p=>`<div class="item"><div><b>${p.name}</b><span class="muted">${p.sku} · Modal ${rup(p.cost)}</span><div class="tag" style="margin-top:6px">SN ${p.serial}</div></div><div style="text-align:right"><strong>${rup(p.price)}</strong><div>${p.stock} stok</div></div></div>`).join('')}</div>`}
-function addProduct(){let name=prompt('Nama produk');if(!name)return;let price=+prompt('Harga jual','1500000'),cost=+prompt('Harga modal','1200000'),stock=+prompt('Stok','1'),serial=prompt('Serial number','SN-001');products.push({id:Date.now(),name,sku:'SKU'+Date.now().toString().slice(-5),price,cost,stock,serial});save('products',products);toast('Produk ditambahkan');show()}
+function productPage(m){
+m.innerHTML=`<div class="sectionhead"><div><h2>Daftar Produk</h2><span class="muted">${products.length} produk</span></div><button class="btn goldbtn" onclick="addProduct()">+ Produk</button></div>
+<div class="list">${products.map(p=>`<div class="item productitem">
+<div class="productinfo"><b>${p.name}</b><span class="muted">${p.sku}</span><span class="muted">Modal ${rup(p.cost)} · SN ${p.serial||'-'}</span><span class="tag" style="margin-top:6px">${p.stock} stok</span></div>
+<div class="productright"><strong>${rup(p.price)}</strong><div class="productactions"><button class="btn smallbtn" onclick="editProduct(${p.id})">Edit</button><button class="btn smallbtn danger" onclick="deleteProduct(${p.id})">Hapus</button></div></div>
+</div>`).join('')||'<div class="empty">Belum ada produk</div>'}</div>`}
+
+function productForm(title,p={}){
+const editing=!!p.id;
+const m=$('#main');
+m.innerHTML=`<div class="sectionhead"><h2>${title}</h2><button class="btn" onclick="show()">Batal</button></div>
+<div class="card formcard">
+<div class="field"><label>Nama produk</label><input id="pn" value="${p.name||''}" placeholder='Contoh: Coocaa 32"'></div>
+<div class="field"><label>SKU</label><input id="psku" value="${p.sku||''}" placeholder="SKU TV"></div>
+<div class="row"><div class="field"><label>Harga jual</label><input id="pprice" type="number" value="${p.price||''}" placeholder="1500000"></div><div class="field"><label>Harga modal</label><input id="pcost" type="number" value="${p.cost||''}" placeholder="1200000"></div></div>
+<div class="row"><div class="field"><label>Stok</label><input id="pstock" type="number" min="0" value="${p.stock??0}"></div><div class="field"><label>Serial number</label><input id="pserial" value="${p.serial||''}" placeholder="SN-001"></div></div>
+<button class="btn primary" style="width:100%" onclick="${editing?`updateProduct(${p.id})`:'saveNewProduct()'}">${editing?'Simpan Perubahan':'Simpan Produk'}</button>
+</div>`;
+}
+
+function addProduct(){productForm('Tambah Produk');}
+
+function saveNewProduct(){
+let name=$('#pn').value.trim(), sku=$('#psku').value.trim(), price=+$('#pprice').value, cost=+$('#pcost').value, stock=Math.max(0,+$('#pstock').value||0), serial=$('#pserial').value.trim();
+if(!name)return toast('Nama produk wajib diisi');
+if(!sku)sku='SKU'+Date.now().toString().slice(-5);
+if(price<=0)return toast('Harga jual harus diisi');
+if(cost<0)return toast('Harga modal tidak valid');
+products.push({id:Date.now(),name,sku,price,cost,stock,serial});
+save('products',products);toast('Produk ditambahkan');show();
+}
+
+function editProduct(id){
+let p=products.find(x=>x.id===id);
+if(p)productForm('Edit Produk',p);
+}
+
+function updateProduct(id){
+let p=products.find(x=>x.id===id);
+if(!p)return;
+let name=$('#pn').value.trim(), sku=$('#psku').value.trim(), price=+$('#pprice').value, cost=+$('#pcost').value, stock=Math.max(0,+$('#pstock').value||0), serial=$('#pserial').value.trim();
+if(!name)return toast('Nama produk wajib diisi');
+if(!sku)return toast('SKU wajib diisi');
+if(price<=0)return toast('Harga jual harus diisi');
+if(cost<0)return toast('Harga modal tidak valid');
+Object.assign(p,{name,sku,price,cost,stock,serial});
+save('products',products);toast('Perubahan produk disimpan');show();
+}
+
+function deleteProduct(id){
+let p=products.find(x=>x.id===id);
+if(!p)return;
+if(!confirm(`Hapus produk "${p.name}"?`))return;
+products=products.filter(x=>x.id!==id);
+save('products',products);toast('Produk dihapus');show();
+}
 function salesPage(m){m.innerHTML=`<h2>Penjualan Baru</h2><div class="card" style="padding:18px"><div class="field"><label>Produk</label><select id="sp">${products.filter(p=>p.stock>0).map(p=>`<option value="${p.id}">${p.name} — ${rup(p.price)} (stok ${p.stock})</option>`).join('')}</select></div><div class="field"><label>Pelanggan</label><select id="sc"><option value="">Umum</option>${customers.map(c=>`<option>${c.name}</option>`).join('')}</select></div><div class="row"><div class="field"><label>Diskon</label><input id="disc" type="number" value="0"></div><div class="field"><label>Ongkir</label><input id="ship" type="number" value="0"></div></div><div class="row"><div class="field"><label>Pemasangan</label><input id="install" type="number" value="0"></div><div class="field"><label>Bonus</label><select id="bonus"><option>Bracket</option><option>Antena</option><option>Tanpa bonus</option></select></div></div><div class="field"><label>Pembayaran</label><select id="pay"><option>Cash</option><option>Transfer</option><option>QRIS</option></select></div><div class="section"><div class="total" id="stotal">Total</div></div><button class="btn primary" style="width:100%" onclick="sell()">Simpan Transaksi</button></div>`;['sp','disc','ship','install'].forEach(x=>$('#'+x)?.addEventListener('input',calc));calc()}
 function calc(){let p=products.find(x=>x.id==$('#sp')?.value);if(!p)return;let total=p.price-(+$('#disc').value||0)+(+$('#ship').value||0)+(+$('#install').value||0);$('#stotal').textContent=rup(total)}
 function sell(){let p=products.find(x=>x.id==$('#sp').value);if(!p||p.stock<1)return toast('Stok habis');let discount=+$('#disc').value||0,ship=+$('#ship').value||0,install=+$('#install').value||0,total=p.price-discount+ship+install;let no='TVJ-'+new Date().getFullYear()+'-'+String(sales.length+1).padStart(4,'0');let s={no,product:p.name,customer:$('#sc').value,total,profit:total-p.cost,bonus:$('#bonus').value,payment:$('#pay').value,date:new Date().toISOString(),serial:p.serial};sales.push(s);p.stock--;save('sales',sales);save('products',products);deliveries.push({no,customer:s.customer||'Umum',product:p.name,status:'Belum Dikirim'});save('deliveries',deliveries);alert(`Transaksi ${no}\n${p.name}\nTotal: ${rup(total)}\nSN: ${p.serial}`);toast('Transaksi tersimpan');page='home';render()}
